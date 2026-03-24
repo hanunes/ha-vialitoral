@@ -8,7 +8,7 @@ class Api:
             self.BASE_URL = 'http://www.vialitoral.com'
             self.CCTV_URL = '/assets/json/cctvs.json'
             
-            self.HEADERS = { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36' }
+            self.HEADERS = { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36', 'referer': 'https://www.vialitoral.com/map' }
             self.HEADERS_CONTENT_TYPE = { 'content-type': 'application/json' }
 
         async def get_cameras(self):
@@ -24,7 +24,7 @@ class Api:
             _LOGGER.info('Updating Vialitoral camera image %s %s' % (type, id))
             
             async with aiohttp.ClientSession(headers=self.HEADERS) as session:
-                async with session.get(self.BASE_URL +"/imagens/"+ id +"/snap_c1.jpg") as resp:
+                async with session.get(self.BASE_URL +"/cctv.php?image="+ id) as resp:
                     data = await resp.read()
                     
                     _LOGGER.info('Updated Vialitoral camera %s %s' % (type, id))
