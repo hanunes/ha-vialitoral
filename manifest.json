@@ -1,10 +1,10 @@
 {
-  "version": "v20250619",
+  "version": "1.0.0",
   "domain": "vialitoral",
   "name": "Vialitoral Webcam Platform",
-  "documentation": "",
+  "documentation": "https://github.com/hanunes/ha-vialitoral/blob/main/README.md",
   "dependencies": [],
-  "codeowners": [],
+  "codeowners": ["@hanunes"],
   "requirements": [],
   "config_flow": true,
   "iot_class": "cloud_polling"
