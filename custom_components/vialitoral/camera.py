@@ -1,18 +1,29 @@
 """Camera platform for the Vialitoral integration.
 
 Exposes each Vialitoral highway CCTV as a HA Camera entity. Images are
-fetched on HA's standard polling interval via async_update() and cached
-locally so async_camera_image() can return synchronously.
+fetched on a per-camera staggered schedule to avoid hitting the remote
+server with a burst of simultaneous requests. Each camera waits a random
+delay (0–30 s) before its first fetch, then refreshes every SCAN_INTERVAL.
 """
 from homeassistant.components.camera import Camera
 from homeassistant.helpers.device_registry import DeviceInfo
-from .api import Api
+from homeassistant.helpers.event import async_track_time_interval, async_call_later
+from homeassistant.core import callback
 from . import DOMAIN
 
 import logging
 import base64
+import random
+from datetime import timedelta
 
 _LOGGER = logging.getLogger(__name__)
+
+# How often each camera refreshes after its initial staggered fetch.
+SCAN_INTERVAL = timedelta(seconds=60)
+
+# Maximum random delay (seconds) before a camera's first fetch.
+# Spreads N cameras evenly across this window at startup.
+_MAX_STAGGER_SECONDS = 30
 
 # 1×1 transparent GIF used as a placeholder before the first successful fetch.
 _BLANK_GIF = base64.b64decode(
@@ -26,7 +37,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     cameras = [VialitoralCamera(cam, api) for cam in await api.get_cameras()]
 
-    async_add_entities(cameras, update_before_add=True)
+    # update_before_add is intentionally False — each camera self-staggers
+    # its first fetch via async_added_to_hass to avoid a request burst.
+    async_add_entities(cameras, update_before_add=False)
 
 
 class VialitoralCamera(Camera):
@@ -52,12 +65,49 @@ class VialitoralCamera(Camera):
 
         self._api = api
         self._image = _BLANK_GIF
+        self._unsub_interval = None
+
+        # Each camera picks a unique random delay so fetches are spread out.
+        self._stagger_delay = random.uniform(0, _MAX_STAGGER_SECONDS)
+
+    async def async_added_to_hass(self):
+        """Schedule the first fetch after a random stagger delay, then set up
+        a fixed periodic interval for subsequent refreshes."""
+        await super().async_added_to_hass()
+
+        async def _initial_update(_now=None):
+            await self._fetch_and_write()
+            self._unsub_interval = async_track_time_interval(
+                self.hass, self._handle_interval, SCAN_INTERVAL
+            )
+
+        async_call_later(self.hass, self._stagger_delay, _initial_update)
+        _LOGGER.debug(
+            "Camera %s will start fetching in %.1f s",
+            self._name,
+            self._stagger_delay,
+        )
+
+    async def async_will_remove_from_hass(self):
+        """Cancel the periodic interval when the entity is removed."""
+        if self._unsub_interval:
+            self._unsub_interval()
+            self._unsub_interval = None
+
+    @callback
+    def _handle_interval(self, now):
+        """Fire-and-forget wrapper called by the time interval tracker."""
+        self.hass.async_create_task(self._fetch_and_write())
+
+    async def _fetch_and_write(self):
+        """Fetch a new image and push the updated state to HA."""
+        await self.async_update()
+        self.async_write_ha_state()
 
     async def async_update(self):
         """Fetch a fresh snapshot from the Vialitoral API.
 
-        Called by HA on each polling cycle. On failure the previous image is
-        retained and a warning is logged.
+        On failure the previous image is retained and a warning is logged.
         """
         _LOGGER.info("Refreshing %s image", self._name)
         try:
@@ -75,8 +125,8 @@ class VialitoralCamera(Camera):
 
     @property
     def should_poll(self):
-        """Return True so HA calls async_update() on its scan interval."""
-        return True
+        """Disable HA polling — this entity manages its own schedule."""
+        return False
 
     @property
     def unique_id(self):
