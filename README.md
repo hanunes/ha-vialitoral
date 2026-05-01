@@ -107,6 +107,14 @@ cards:
     show_name: true
 ```
 
+> **Note:** Built-in Lovelace cards (`picture-entity`, `picture-glance`) may take a moment to reflect the newly selected camera due to browser-side image caching. For immediate updates install the [Advanced Camera Card](https://github.com/dermotduffy/advanced-camera-card) custom card from HACS and use:
+> ```yaml
+> type: custom:advanced-camera-card
+> cameras:
+>   - camera_entity: camera.vialitoral_active
+>     live_provider: image
+> ```
+
 ### All cameras in a grid
 
 ```yaml
