@@ -193,6 +193,9 @@ class VialitoralActiveCamera(Camera):
         entity: camera.vialitoral_active
     """
 
+    # Prevent HA from prefixing the entity_id with the device name.
+    _attr_has_entity_name = False
+
     def __init__(self, entry_id: str):
         """Initialise the active camera proxy.
 
