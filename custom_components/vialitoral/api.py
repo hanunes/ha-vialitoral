@@ -21,7 +21,7 @@ class Api:
         self.BASE_URL = 'https://www.vialitoral.com'
         self.CCTV_URL = '/assets/json/cctvs.json'
         self.HEADERS = {
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
             'referer': 'https://www.vialitoral.com/map',
         }
         self._session = aiohttp.ClientSession(headers=self.HEADERS, timeout=_TIMEOUT)

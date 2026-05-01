@@ -150,7 +150,7 @@ class VialitoralCamera(Camera):
     @property
     def unique_id(self):
         """Return a unique ID for this camera entity."""
-        return "vialitoral_" + str(self._id) + "_" + self._name
+        return f"vialitoral_{self._type}_{self._id}"
 
     @property
     def name(self):
@@ -248,6 +248,15 @@ class VialitoralActiveCamera(Camera):
     def should_poll(self):
         """Disable polling — updates are pushed directly from the select entity."""
         return False
+
+    @property
+    def device_info(self):
+        """Group the active camera under the same Vialitoral CCTV device."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, "vialitoral_cctv")},
+            name="Vialitoral CCTV",
+            model="webcam",
+        )
 
     @property
     def unique_id(self):
