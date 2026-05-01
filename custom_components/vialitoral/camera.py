@@ -194,7 +194,12 @@ class VialitoralActiveCamera(Camera):
     """
 
     # Prevent HA from prefixing the entity_id with the device name.
-    _attr_has_entity_name = False
+    # Defined as a property so it overrides any instance attribute set by
+    # the Camera base class __init__ in newer HA versions.
+    @property
+    def has_entity_name(self):
+        """Return False so HA uses the entity name directly as the entity ID."""
+        return False
 
     def __init__(self, entry_id: str):
         """Initialise the active camera proxy.
@@ -271,11 +276,3 @@ class VialitoralActiveCamera(Camera):
     def icon(self):
         """Return the icon."""
         return "mdi:cctv"
-
-    @property
-    def device_info(self):
-        """Group under the same Vialitoral CCTV device."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, "vialitoral_cctv")},
-            name="Vialitoral CCTV",
-        )
