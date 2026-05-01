@@ -198,67 +198,41 @@ class VialitoralActiveCamera(Camera):
     """
 
     # Prevent HA from prefixing the entity_id with the device name.
-    # Defined as a property so it overrides any instance attribute set by
-    # the Camera base class __init__ in newer HA versions.
     @property
     def has_entity_name(self):
         """Return False so HA uses the entity name directly as the entity ID."""
         return False
 
     def __init__(self, entry_id: str):
-        """Initialise the active camera proxy.
-
-        Args:
-            entry_id: Config entry ID used to look up the camera map in hass.data.
-        """
+        """Initialise the active camera proxy."""
         super().__init__()
         self._entry_id = entry_id
         self._image = _BLANK_GIF
-        self._unsub_state = None
         self._selected_label: str | None = None
 
     async def async_added_to_hass(self):
-        """Subscribe to state changes of the select entity."""
+        """Perform an initial lookup once HA has fully started."""
         await super().async_added_to_hass()
 
-        self._unsub_state = async_track_state_change_event(
-            self.hass, _SELECT_ENTITY_ID, self._handle_select_change
-        )
+    def update_selection(self, label: str) -> None:
+        """Called directly by the select entity when the user picks a camera.
 
-    async def async_will_remove_from_hass(self):
-        """Unsubscribe from state changes on removal."""
-        if self._unsub_state:
-            self._unsub_state()
-            self._unsub_state = None
-
-    @callback
-    def _handle_select_change(self, event):
-        """Update the displayed image when the select entity changes state.
-
-        Also updates _selected_label so that extra_state_attributes changes,
-        guaranteeing HA fires a state_changed event and the frontend re-fetches
-        the image immediately with a new URL timestamp.
+        Updates the cached image and pushes a state change so the frontend
+        re-fetches the image immediately via the updated last_updated timestamp.
         """
-        new_state = event.data.get("new_state")
-        if new_state is None:
-            return
-
-        selected_label = new_state.state
         cam_map = self.hass.data[DOMAIN].get(self._entry_id + "_cam_map", {})
-        cam = cam_map.get(selected_label)
+        cam = cam_map.get(label)
 
         if cam is not None:
             self._image = cam._image
-            self._selected_label = selected_label
+            self._selected_label = label
+            self.async_write_ha_state()
         else:
-            _LOGGER.warning("Active camera: no camera found for label '%s'", selected_label)
-
-        self.async_write_ha_state()
+            _LOGGER.warning("Active camera: no camera found for label '%s'", label)
 
     async def async_camera_image(self, width=None, height=None):
         """Return the image of the currently selected camera."""
-        # Also do a live lookup so the image is current even on first render
-        # (before the first select state-change event fires).
+        # Live lookup so the image is current on first render.
         select_state = self.hass.states.get(_SELECT_ENTITY_ID)
         if select_state:
             cam_map = self.hass.data[DOMAIN].get(self._entry_id + "_cam_map", {})
@@ -270,18 +244,12 @@ class VialitoralActiveCamera(Camera):
 
     @property
     def extra_state_attributes(self):
-        """Expose the selected camera label.
-
-        This ensures the state attributes change whenever the selection changes,
-        forcing HA to fire a state_changed event with a new last_updated timestamp.
-        The frontend uses that timestamp as a cache-buster in the camera image URL,
-        making the image update immediately.
-        """
+        """Expose the selected label so state_changed fires on each selection."""
         return {"active_camera": self._selected_label}
 
     @property
     def should_poll(self):
-        """Disable polling — updates are pushed from select state changes."""
+        """Disable polling — updates are pushed directly from the select entity."""
         return False
 
     @property
