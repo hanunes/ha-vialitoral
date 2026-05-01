@@ -209,6 +209,7 @@ class VialitoralActiveCamera(Camera):
         self._entry_id = entry_id
         self._image = _BLANK_GIF
         self._selected_label: str | None = None
+        self._is_recording = False
 
     async def async_added_to_hass(self):
         """Perform an initial lookup once HA has fully started."""
@@ -217,18 +218,29 @@ class VialitoralActiveCamera(Camera):
     def update_selection(self, label: str) -> None:
         """Called directly by the select entity when the user picks a camera.
 
-        Updates the cached image and pushes a state change so the frontend
-        re-fetches the image immediately via the updated last_updated timestamp.
+        Toggles the recording state idle→recording→idle so that Lovelace cards
+        detect a state transition and immediately re-fetch the camera image.
         """
         cam_map = self.hass.data[DOMAIN].get(self._entry_id + "_cam_map", {})
         cam = cam_map.get(label)
 
-        if cam is not None:
-            self._image = cam._image
-            self._selected_label = label
-            self.async_write_ha_state()
-        else:
+        if cam is None:
             _LOGGER.warning("Active camera: no camera found for label '%s'", label)
+            return
+
+        self._image = cam._image
+        self._selected_label = label
+
+        # Pulse idle → recording → idle to force Lovelace card re-render.
+        self._is_recording = True
+        self.async_write_ha_state()
+        self._is_recording = False
+        self.async_write_ha_state()
+
+    @property
+    def is_recording(self):
+        """Return recording state — toggled briefly on selection to force re-render."""
+        return self._is_recording
 
     async def async_camera_image(self, width=None, height=None):
         """Return the image of the currently selected camera."""
