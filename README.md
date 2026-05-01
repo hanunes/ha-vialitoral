@@ -37,7 +37,7 @@ No additional Python packages are required beyond what ships with Home Assistant
 
 ### Manual
 
-1. Copy the `ha-vialitoral/` folder into `<config>/custom_components/vialitoral/`
+1. Copy the `custom_components/vialitoral/` folder into your HA `<config>/custom_components/` directory
 2. Restart Home Assistant
 
 ---
@@ -124,13 +124,16 @@ cards:
 ## Architecture
 
 ```
-custom_components/vialitoral/
-├── __init__.py       # Integration setup/unload, shared Api instance in hass.data
-├── api.py            # aiohttp HTTP client for vialitoral.com
-├── camera.py         # Camera platform — one VialitoralCamera entity per CCTV
-├── select.py         # Select platform — camera picker with rich state attributes
-├── config_flow.py    # UI config flow (no user input required)
-└── manifest.json     # Integration metadata
+ha-vialitoral/                        # repository root
+├── README.md
+└── custom_components/
+    └── vialitoral/
+        ├── __init__.py               # Integration setup/unload, shared Api instance in hass.data
+        ├── api.py                    # aiohttp HTTP client for vialitoral.com
+        ├── camera.py                 # Camera platform — one VialitoralCamera entity per CCTV
+        ├── select.py                 # Select platform — camera picker with rich state attributes
+        ├── config_flow.py            # UI config flow (no user input required)
+        └── manifest.json             # Integration metadata
 ```
 
 **Data flow:**
