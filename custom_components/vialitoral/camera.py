@@ -11,7 +11,7 @@ the select entity, with no additional API calls.
 """
 from homeassistant.components.camera import Camera
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.event import async_track_time_interval, async_call_later, async_track_state_change_event
+from homeassistant.helpers.event import async_track_time_interval, async_call_later
 from homeassistant.core import callback
 from . import DOMAIN
 
@@ -51,6 +51,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     }
 
     active_camera = VialitoralActiveCamera(config_entry.entry_id)
+
+    # Store the proxy camera instance so the select entity can push updates
+    # directly instead of relying on state-change event subscription.
+    hass.data[DOMAIN][config_entry.entry_id + "_active_cam"] = active_camera
 
     # update_before_add is intentionally False — each camera self-staggers
     # its first fetch via async_added_to_hass to avoid a request burst.

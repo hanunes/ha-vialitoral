@@ -20,7 +20,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Vialitoral select entity from a config entry."""
     api = hass.data[DOMAIN][config_entry.entry_id]
 
-    async_add_entities([VialitoralSelect(await api.get_cameras())])
+    async_add_entities([VialitoralSelect(config_entry.entry_id, await api.get_cameras())])
 
 
 def _camera_label(cam: dict) -> str:
@@ -41,14 +41,16 @@ def _camera_entity_id(cam: dict) -> str:
 class VialitoralSelect(SelectEntity):
     """Select entity that exposes all Vialitoral cameras as choosable options."""
 
-    def __init__(self, cameras: list):
+    def __init__(self, entry_id: str, cameras: list):
         """Initialise the select entity.
 
         Args:
-            cameras: Full camera list returned by Api.get_cameras().
+            entry_id: Config entry ID used to reach the proxy camera in hass.data.
+            cameras:  Full camera list returned by Api.get_cameras().
         """
         super().__init__()
 
+        self._entry_id = entry_id
         # Map display label → raw camera data for fast lookups
         self._map: dict[str, dict] = {_camera_label(cam): cam for cam in cameras}
         self._options: list[str] = list(self._map.keys())
@@ -102,8 +104,19 @@ class VialitoralSelect(SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Handle a new option being selected.
 
-        Ignores unknown options to prevent state corruption.
+        Updates own state, then directly pushes the new image to the proxy
+        camera entity so the frontend refreshes immediately.
         """
-        if option in self._map:
-            self._current = option
-            self.async_write_ha_state()
+        if option not in self._map:
+            return
+
+        self._current = option
+        self.async_write_ha_state()
+
+        active_cam = self.hass.data[DOMAIN].get(self._entry_id + "_active_cam")
+        if active_cam is not None:
+            active_cam.update_selection(option)
+
+        active_cam = self.hass.data[DOMAIN].get(self._entry_id + "_active_cam")
+        if active_cam is not None:
+            active_cam.update_selection(option)
