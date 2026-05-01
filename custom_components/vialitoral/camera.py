@@ -211,6 +211,7 @@ class VialitoralActiveCamera(Camera):
         self._entry_id = entry_id
         self._image = _BLANK_GIF
         self._unsub_state = None
+        self._selected_label: str | None = None
 
     async def async_added_to_hass(self):
         """Subscribe to state changes of the select entity."""
@@ -228,7 +229,12 @@ class VialitoralActiveCamera(Camera):
 
     @callback
     def _handle_select_change(self, event):
-        """Update the displayed image when the select entity changes state."""
+        """Update the displayed image when the select entity changes state.
+
+        Also updates _selected_label so that extra_state_attributes changes,
+        guaranteeing HA fires a state_changed event and the frontend re-fetches
+        the image immediately with a new URL timestamp.
+        """
         new_state = event.data.get("new_state")
         if new_state is None:
             return
@@ -239,6 +245,7 @@ class VialitoralActiveCamera(Camera):
 
         if cam is not None:
             self._image = cam._image
+            self._selected_label = selected_label
         else:
             _LOGGER.warning("Active camera: no camera found for label '%s'", selected_label)
 
@@ -256,6 +263,17 @@ class VialitoralActiveCamera(Camera):
                 self._image = cam._image
 
         return self._image
+
+    @property
+    def extra_state_attributes(self):
+        """Expose the selected camera label.
+
+        This ensures the state attributes change whenever the selection changes,
+        forcing HA to fire a state_changed event with a new last_updated timestamp.
+        The frontend uses that timestamp as a cache-buster in the camera image URL,
+        making the image update immediately.
+        """
+        return {"active_camera": self._selected_label}
 
     @property
     def should_poll(self):
