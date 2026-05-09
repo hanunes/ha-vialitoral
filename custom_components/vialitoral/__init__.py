@@ -11,6 +11,7 @@ from .api import Api
 
 DOMAIN = 'vialitoral'
 CONF_CAMERAS = "cameras"
+CONF_SCAN_INTERVAL = "scan_interval"
 
 _LOGGER = logging.getLogger(__name__)
 

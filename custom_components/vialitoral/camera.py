@@ -13,7 +13,7 @@ from homeassistant.components.camera import Camera
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.event import async_track_time_interval, async_call_later
 from homeassistant.core import callback
-from . import DOMAIN, CONF_CAMERAS
+from . import DOMAIN, CONF_CAMERAS, CONF_SCAN_INTERVAL
 
 import logging
 import base64
@@ -23,7 +23,8 @@ from datetime import timedelta
 _LOGGER = logging.getLogger(__name__)
 
 # How often each camera refreshes after its initial staggered fetch.
-SCAN_INTERVAL = timedelta(seconds=60)
+# Overridden per config entry via CONF_SCAN_INTERVAL (default: 5 min).
+_DEFAULT_SCAN_INTERVAL = timedelta(minutes=5)
 
 # Maximum random delay (seconds) before a camera's first fetch.
 # Spreads N cameras evenly across this window at startup.
@@ -46,7 +47,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     all_cameras = await api.get_cameras()
     filtered = [cam for cam in all_cameras if str(cam["image"]) in selected_ids] if selected_ids else all_cameras
 
-    cameras = [VialitoralCamera(cam, api) for cam in filtered]
+    scan_interval = timedelta(minutes=config_entry.data.get(CONF_SCAN_INTERVAL, 5))
+
+    cameras = [VialitoralCamera(cam, api, scan_interval) for cam in filtered]
 
     # Store a label→instance map so VialitoralActiveCamera can look up
     # cached images without making additional API calls.
@@ -68,13 +71,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class VialitoralCamera(Camera):
     """Representation of a single Vialitoral CCTV camera."""
 
-    def __init__(self, data, api):
+    def __init__(self, data, api, scan_interval: timedelta = _DEFAULT_SCAN_INTERVAL):
         """Initialise the camera entity from raw API data.
 
         Args:
             data: Camera dict from the Vialitoral API (name, image, latitude,
                   longitude, type).
             api:  Shared Api instance injected from hass.data.
+            scan_interval: How often to refresh the camera image.
         """
         super().__init__()
 
@@ -87,6 +91,7 @@ class VialitoralCamera(Camera):
         self._detection = 0
 
         self._api = api
+        self._scan_interval = scan_interval
         self._image = _BLANK_GIF
         self._unsub_interval = None
 
@@ -101,7 +106,7 @@ class VialitoralCamera(Camera):
         async def _initial_update(_now=None):
             await self._fetch_and_write()
             self._unsub_interval = async_track_time_interval(
-                self.hass, self._handle_interval, SCAN_INTERVAL
+                self.hass, self._handle_interval, self._scan_interval
             )
 
         async_call_later(self.hass, self._stagger_delay, _initial_update)

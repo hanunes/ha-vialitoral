@@ -14,9 +14,12 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
 )
 from .api import Api
-from . import CONF_CAMERAS
+from . import CONF_CAMERAS, CONF_SCAN_INTERVAL
 
 import logging
 
@@ -60,7 +63,10 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
         if user_input is not None:
             return self.async_create_entry(
                 title="Vialitoral CCTV",
-                data={CONF_CAMERAS: user_input[CONF_CAMERAS]},
+                data={
+                    CONF_CAMERAS: user_input[CONF_CAMERAS],
+                    CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
+                },
             )
 
         options = [
@@ -79,7 +85,16 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
                         multiple=True,
                         mode=SelectSelectorMode.DROPDOWN,
                     )
-                )
+                ),
+                vol.Required(CONF_SCAN_INTERVAL, default=5): NumberSelector(
+                    NumberSelectorConfig(
+                        min=2,
+                        max=10,
+                        step=1,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.SLIDER,
+                    )
+                ),
             }
         )
 
