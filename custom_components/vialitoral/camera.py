@@ -13,7 +13,7 @@ from homeassistant.components.camera import Camera
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.event import async_track_time_interval, async_call_later
 from homeassistant.core import callback
-from . import DOMAIN
+from . import DOMAIN, CONF_CAMERAS
 
 import logging
 import base64
@@ -42,7 +42,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up Vialitoral camera entities from a config entry."""
     api = hass.data[DOMAIN][config_entry.entry_id]
 
-    cameras = [VialitoralCamera(cam, api) for cam in await api.get_cameras()]
+    selected_ids = set(config_entry.data.get(CONF_CAMERAS, []))
+    all_cameras = await api.get_cameras()
+    filtered = [cam for cam in all_cameras if str(cam["image"]) in selected_ids] if selected_ids else all_cameras
+
+    cameras = [VialitoralCamera(cam, api) for cam in filtered]
 
     # Store a label→instance map so VialitoralActiveCamera can look up
     # cached images without making additional API calls.

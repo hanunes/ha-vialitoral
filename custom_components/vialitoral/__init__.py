@@ -10,6 +10,7 @@ import logging
 from .api import Api
 
 DOMAIN = 'vialitoral'
+CONF_CAMERAS = "cameras"
 
 _LOGGER = logging.getLogger(__name__)
 

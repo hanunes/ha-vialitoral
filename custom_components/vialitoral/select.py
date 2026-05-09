@@ -10,7 +10,7 @@ Vialitoral cameras. Selecting an option updates camera.vialitoral_active
 from homeassistant.components.select import SelectEntity
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.util import slugify
-from . import DOMAIN
+from . import DOMAIN, CONF_CAMERAS
 
 import logging
 
@@ -21,7 +21,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Vialitoral select entity from a config entry."""
     api = hass.data[DOMAIN][config_entry.entry_id]
 
-    async_add_entities([VialitoralSelect(config_entry.entry_id, await api.get_cameras())])
+    selected_ids = set(config_entry.data.get(CONF_CAMERAS, []))
+    all_cameras = await api.get_cameras()
+    cameras = [cam for cam in all_cameras if str(cam["image"]) in selected_ids] if selected_ids else all_cameras
+
+    async_add_entities([VialitoralSelect(config_entry.entry_id, cameras)])
 
 
 def _camera_label(cam: dict) -> str:
