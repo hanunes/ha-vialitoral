@@ -12,6 +12,14 @@
           "cameras": "Cameras",
           "scan_interval": "Refresh interval"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Vialitoral",
+        "description": "Update your camera selection or refresh interval. Open the [Vialitoral map](https://www.vialitoral.com/map) to check camera locations.",
+        "data": {
+          "cameras": "Cameras",
+          "scan_interval": "Refresh interval"
+        }
       }
     },
     "error": {
@@ -19,7 +27,8 @@
     },
     "abort": {
       "single_instance_allowed": "Only one instance of Vialitoral is allowed.",
-      "already_configured": "Vialitoral is already configured."
+      "already_configured": "Vialitoral is already configured.",
+      "reconfigure_successful": "Vialitoral has been reconfigured and reloaded successfully."
     }
   }
 }
