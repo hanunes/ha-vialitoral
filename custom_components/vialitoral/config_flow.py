@@ -11,9 +11,11 @@ Reconfigure (three-dot menu on the integration card):
 
 Only the selected camera IDs and scan interval are persisted in entry.data.
 """
+import logging
+
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
@@ -22,10 +24,9 @@ from homeassistant.helpers.selector import (
     NumberSelectorConfig,
     NumberSelectorMode,
 )
-from .api import Api
-from . import CONF_CAMERAS, CONF_SCAN_INTERVAL
 
-import logging
+from .api import Api, VialitoralApiError
+from .const import CONF_CAMERAS, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
         """Initialise flow state."""
         self._available_cameras: list[dict] = []
 
-    async def async_step_user(self, user_input=None) -> FlowResult:
+    async def async_step_user(self, user_input=None) -> ConfigFlowResult:
         """Validate connectivity and fetch the available camera list."""
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
@@ -50,9 +51,9 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
         api = Api()
         try:
             self._available_cameras = await api.get_cameras()
-            _LOGGER.info("Found [%d] cameras", len(self._available_cameras))
-        except Exception as e:
-            _LOGGER.error("Cannot connect to Vialitoral API: %s", e)
+            _LOGGER.debug("Found [%d] cameras", len(self._available_cameras))
+        except VialitoralApiError as err:
+            _LOGGER.error("Cannot connect to Vialitoral API: %s", err)
             errors["base"] = "cannot_connect"
         finally:
             await api.close()
@@ -94,7 +95,7 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
             }
         )
 
-    async def async_step_cameras(self, user_input=None) -> FlowResult:
+    async def async_step_cameras(self, user_input=None) -> ConfigFlowResult:
         """Let the user choose which cameras to add to Home Assistant."""
         if user_input is not None:
             return self.async_create_entry(
@@ -110,7 +111,7 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
             data_schema=self._build_cameras_schema(),
         )
 
-    async def async_step_reconfigure(self, user_input=None) -> FlowResult:
+    async def async_step_reconfigure(self, user_input=None) -> ConfigFlowResult:
         """Handle reconfiguration from the integration's three-dot menu.
 
         Re-fetches the live camera list, pre-fills the form with the current
@@ -131,8 +132,8 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
         api = Api()
         try:
             self._available_cameras = await api.get_cameras()
-        except Exception as e:
-            _LOGGER.error("Cannot connect to Vialitoral API: %s", e)
+        except VialitoralApiError as err:
+            _LOGGER.error("Cannot connect to Vialitoral API: %s", err)
             errors["base"] = "cannot_connect"
         finally:
             await api.close()
@@ -144,6 +145,6 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
             step_id="reconfigure",
             data_schema=self._build_cameras_schema(
                 current_cameras=entry.data.get(CONF_CAMERAS),
-                current_interval=entry.data.get(CONF_SCAN_INTERVAL, 5),
+                current_interval=entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
             ),
         )

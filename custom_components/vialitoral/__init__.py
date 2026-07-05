@@ -6,40 +6,50 @@ camera from the frontend.
 
 Platforms: camera, select
 """
-import logging
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
+
 from .api import Api
+from .const import DOMAIN
+from .coordinator import VialitoralCoordinator
 
-DOMAIN = 'vialitoral'
-CONF_CAMERAS = "cameras"
-CONF_SCAN_INTERVAL = "scan_interval"
-
-_LOGGER = logging.getLogger(__name__)
+PLATFORMS = [Platform.CAMERA, Platform.SELECT]
 
 
-async def async_setup_entry(hass, entry):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Vialitoral from a config entry.
 
-    Creates a shared Api instance, stores it in hass.data so both the camera
-    and select platforms can reuse it, then forwards setup to each platform.
+    Creates a shared Api instance and a single DataUpdateCoordinator, performs
+    the first refresh, stores the coordinator in hass.data, then forwards setup
+    to each platform.
     """
     api = Api()
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = api
+    coordinator = VialitoralCoordinator(hass, entry, api)
 
-    await hass.config_entries.async_forward_entry_setups(entry, ["camera", "select"])
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        await api.close()
+        raise
+
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
 
-async def async_unload_entry(hass, entry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a Vialitoral config entry.
 
     Unloads all platforms, closes the shared aiohttp session, and removes
-    the Api instance from hass.data.
+    the coordinator from hass.data.
     """
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, ["camera", "select"])
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        api = hass.data[DOMAIN].pop(entry.entry_id)
-        await api.close()
+        coordinator = hass.data[DOMAIN].pop(entry.entry_id)
+        await coordinator.api.close()
 
     return unload_ok

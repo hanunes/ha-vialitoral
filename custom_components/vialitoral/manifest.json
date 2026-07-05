@@ -1,12 +1,14 @@
 {
-  "version": "1.6.0",
   "domain": "vialitoral",
-  "name": "Vialitoral Webcam Platform",
-  "documentation": "https://github.com/hanunes/ha-vialitoral/blob/main/README.md",
-  "dependencies": [],
+  "name": "Vialitoral CCTV",
   "codeowners": ["@hanunes"],
-  "requirements": [],
   "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/hanunes/ha-vialitoral/blob/main/README.md",
+  "integration_type": "hub",
   "iot_class": "cloud_polling",
-  "homeassistant": "2023.1.0"
+  "issue_tracker": "https://github.com/hanunes/ha-vialitoral/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "1.7.0"
 }

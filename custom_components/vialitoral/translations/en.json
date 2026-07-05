@@ -27,7 +27,6 @@
     },
     "abort": {
       "single_instance_allowed": "Only one instance of Vialitoral is allowed.",
-      "already_configured": "Vialitoral is already configured.",
       "reconfigure_successful": "Vialitoral has been reconfigured and reloaded successfully."
     }
   }
