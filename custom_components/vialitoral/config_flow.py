@@ -26,7 +26,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .api import Api, VialitoralApiError
-from .const import CONF_CAMERAS, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+from .const import CONF_CAMERAS, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, MAP_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,6 +109,7 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
         return self.async_show_form(
             step_id="cameras",
             data_schema=self._build_cameras_schema(),
+            description_placeholders={"map_url": MAP_URL},
         )
 
     async def async_step_reconfigure(self, user_input=None) -> ConfigFlowResult:
@@ -139,7 +140,11 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
             await api.close()
 
         if errors:
-            return self.async_show_form(step_id="reconfigure", errors=errors)
+            return self.async_show_form(
+                step_id="reconfigure",
+                errors=errors,
+                description_placeholders={"map_url": MAP_URL},
+            )
 
         return self.async_show_form(
             step_id="reconfigure",
@@ -147,4 +152,5 @@ class VialitoralConfigFlow(config_entries.ConfigFlow, domain="vialitoral"):
                 current_cameras=entry.data.get(CONF_CAMERAS),
                 current_interval=entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
             ),
+            description_placeholders={"map_url": MAP_URL},
         )

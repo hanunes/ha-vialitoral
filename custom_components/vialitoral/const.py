@@ -8,6 +8,9 @@ CONF_SCAN_INTERVAL = "scan_interval"
 # Default refresh interval (minutes) when none is stored in the config entry.
 DEFAULT_SCAN_INTERVAL = 5
 
+# Public map of camera locations, surfaced in the config flow descriptions.
+MAP_URL = "https://www.vialitoral.com/map"
+
 
 def camera_label(cam: dict) -> str:
     """Return the human-readable label for a camera.

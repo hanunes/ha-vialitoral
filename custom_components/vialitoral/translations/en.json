@@ -7,7 +7,7 @@
       },
       "cameras": {
         "title": "Select cameras",
-        "description": "Choose which cameras to add to Home Assistant. Open the [Vialitoral map](https://www.vialitoral.com/map) to see where each camera is located, then pick the ones you want below.",
+        "description": "Choose which cameras to add to Home Assistant. Open the Vialitoral map at {map_url} to see where each camera is located, then pick the ones you want below.",
         "data": {
           "cameras": "Cameras",
           "scan_interval": "Refresh interval"
@@ -15,7 +15,7 @@
       },
       "reconfigure": {
         "title": "Reconfigure Vialitoral",
-        "description": "Update your camera selection or refresh interval. Open the [Vialitoral map](https://www.vialitoral.com/map) to check camera locations.",
+        "description": "Update your camera selection or refresh interval. Open the Vialitoral map at {map_url} to check camera locations.",
         "data": {
           "cameras": "Cameras",
           "scan_interval": "Refresh interval"
