@@ -48,6 +48,9 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+          # Skip the brands check until the domain is registered in
+          # home-assistant/brands. Remove once the brands PR is merged.
+          ignore: brands
 
   release:
     name: Create release
