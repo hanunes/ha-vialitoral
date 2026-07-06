@@ -28,6 +28,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = VialitoralCoordinator(hass, entry, api)
 
     try:
+        await coordinator.async_init_store()
         await coordinator.async_config_entry_first_refresh()
     except Exception:
         await api.close()

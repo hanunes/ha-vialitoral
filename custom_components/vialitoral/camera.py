@@ -95,12 +95,19 @@ class VialitoralCamera(CoordinatorEntity[VialitoralCoordinator], Camera):
     @property
     def extra_state_attributes(self):
         """Return additional state attributes exposed to the HA frontend."""
+        current_size, baseline_size, drop_pct = self.coordinator.placeholder_stats(
+            self._id
+        )
         return {
             "latitude": self._latitude,
             "longitude": self._longitude,
             "type": self._type,
             "id": self._id,
             "distance": self._distance,
+            "possible_accident": self.coordinator.is_placeholder(self._id),
+            "current_size": current_size,
+            "baseline_size": baseline_size,
+            "drop_pct": drop_pct,
         }
 
 
@@ -136,8 +143,22 @@ class VialitoralActiveCamera(CoordinatorEntity[VialitoralCoordinator], Camera):
 
     @property
     def extra_state_attributes(self):
-        """Expose the selected camera id so state_changed fires on selection."""
-        return {"active_camera": self.coordinator.selected_camera_id}
+        """Expose the selected camera id and its placeholder detection stats."""
+        cam_id = self.coordinator.selected_camera_id
+        current_size, baseline_size, drop_pct = self.coordinator.placeholder_stats(
+            cam_id
+        )
+        return {
+            "active_camera": cam_id,
+            "possible_accident": (
+                self.coordinator.is_placeholder(cam_id)
+                if cam_id is not None
+                else False
+            ),
+            "current_size": current_size,
+            "baseline_size": baseline_size,
+            "drop_pct": drop_pct,
+        }
 
     @property
     def device_info(self):

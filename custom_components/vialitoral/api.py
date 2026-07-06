@@ -57,7 +57,7 @@ class Api:
         """Fetch a JPEG snapshot for a single camera.
 
         Args:
-            cam_id: Numeric camera identifier from the camera list.
+            cam_id: Camera identifier (the API's image field) from the camera list.
 
         Returns:
             bytes: Raw JPEG image bytes.

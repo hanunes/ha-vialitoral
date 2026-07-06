@@ -95,8 +95,8 @@ class VialitoralSelect(SelectEntity):
         """Return extra attributes for the currently selected camera.
 
         Attributes:
-            total:               Total number of available cameras.
-            selected_camera_id:  Raw API numeric ID of the selected camera.
+            total:               Number of selected cameras added to HA.
+            selected_camera_id:  Identifier (the API's image field) of the selected camera.
             selected_entity_id:  Derived HA entity ID (e.g. camera.some_spot).
             selected_latitude:   GPS latitude of the selected camera.
             selected_longitude:  GPS longitude of the selected camera.
